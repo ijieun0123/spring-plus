@@ -2,11 +2,13 @@ package org.example.expert.domain.todo.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
+import org.example.expert.domain.comment.dto.response.CommentResponse;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoSearchResponse;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
@@ -16,6 +18,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -79,5 +86,21 @@ public class TodoService {
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
         );
+    }
+
+    public List<TodoSearchResponse> getTodosBySearch(String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
+        List<Todo> findTodoList = todoRepository.findAllBySearch(keyword, searchStartDate, searchEndDate, pageable);
+
+        List<TodoSearchResponse> dtoList = new ArrayList<>();
+        for(Todo todo : findTodoList){
+            TodoSearchResponse dto = new TodoSearchResponse(
+                    todo.getTitle(),
+                    todo.getManagers().size(),
+                    todo.getComments().size()
+            );
+            dtoList.add(dto);
+        }
+
+        return dtoList;
     }
 }
