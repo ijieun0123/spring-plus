@@ -1,10 +1,18 @@
 package org.example.expert.domain.todo.repository;
 
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.AllArgsConstructor;
+import org.example.expert.domain.comment.entity.QComment;
+import org.example.expert.domain.manager.entity.QManager;
+import org.example.expert.domain.todo.dto.response.TodoSearchResponse;
+import org.example.expert.domain.todo.entity.QTodo;
 import org.example.expert.domain.todo.entity.Todo;
+import org.example.expert.domain.todo.enums.SearchType;
+import org.example.expert.domain.user.entity.QUser;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -33,25 +41,68 @@ public class TodoCustomRepositoryImpl implements TodoCustomRepository {
     }
 
     @Override
-    public List<Todo> findAllBySearch(String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
+    public List<TodoSearchResponse> findAllBySearch(SearchType searchType, String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
+
+        QTodo todo = QTodo.todo;
+        QUser user = QUser.user;
+        QManager manager = QManager.manager;
+        QComment comment = QComment.comment;
+
+        BooleanBuilder whereBuilder = new BooleanBuilder();
+        BooleanBuilder havingBuilder = new BooleanBuilder();
+
+        // 키워드 검색 ( TITLE, NICKNAME )
+        if(keyword != null && !keyword.isEmpty()){
+            switch (searchType) {
+                case TITLE:
+                    whereBuilder.and(todo.title.containsIgnoreCase(keyword));
+                    break;
+                case NICKNAME:
+                    whereBuilder.and(manager.user.nickname.containsIgnoreCase(keyword));
+                    break;
+            }
+        }
+
+        // 기간 검색 ( searchStartDate ~ searchEndDate )
+        if(searchStartDate != null && searchEndDate != null){
+            whereBuilder.and(
+                    todo.createdAt.between(
+                            searchStartDate.atStartOfDay(),
+                            LocalDateTime.of(searchEndDate, LocalTime.MAX).withNano(0)
+                    )
+            );
+        }
+
+        // 기간 검색 ( searchStartDate ~ )
+        if(searchStartDate != null && searchEndDate == null){
+            havingBuilder.and(
+                    todo.createdAt.min().goe(searchStartDate.atStartOfDay())
+            );
+        }
+
+        // 기간 검색 ( ~ searchEndDate )
+        if(searchStartDate == null && searchEndDate != null){
+            havingBuilder.and(
+                    todo.createdAt.max().loe(LocalDateTime.of(searchEndDate, LocalTime.MAX).withNano(0))
+            );
+        }
+
         return jpaQueryFactory
-                .selectFrom(todo)
-                .where(
-                        todo.title.containsIgnoreCase(keyword)
-                                .or(todo.user.nickname.containsIgnoreCase(keyword))
-                )
-                .where(searchDateFilter(searchStartDate, searchEndDate))
-                .orderBy(todo.createdAt.desc())
-                .fetch();
-    }
-
-    // 날짜 필터
-    private BooleanExpression searchDateFilter(LocalDate searchStartDate, LocalDate searchEndDate) {
-
-        //goe, loe 사용
-        BooleanExpression isGoeStartDate = todo.createdAt.goe(LocalDateTime.of(searchStartDate, LocalTime.MIN));
-        BooleanExpression isLoeEndDate = todo.createdAt.loe(LocalDateTime.of(searchEndDate, LocalTime.MAX).withNano(0));
-
-        return Expressions.allOf(isGoeStartDate, isLoeEndDate);
+                .select(
+                        Projections.constructor(
+                                TodoSearchResponse.class,
+                                todo.title.as("title"),
+                                manager.count().as("managerCnt"),
+                                comment.count().as("commentCnt")
+                            )
+                        )
+                        .from(todo)
+                        .join(todo.managers, manager)
+                        .join(manager.user, user)
+                        .leftJoin(todo.comments, comment)
+                        .where(whereBuilder)
+                        .groupBy(todo.title)
+                        .having(havingBuilder)
+                        .fetch();
     }
 }

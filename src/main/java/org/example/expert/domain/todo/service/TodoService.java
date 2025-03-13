@@ -10,6 +10,7 @@ import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
 import org.example.expert.domain.todo.dto.response.TodoSearchResponse;
 import org.example.expert.domain.todo.entity.Todo;
+import org.example.expert.domain.todo.enums.SearchType;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
@@ -88,19 +89,9 @@ public class TodoService {
         );
     }
 
-    public List<TodoSearchResponse> getTodosBySearch(String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
-        List<Todo> findTodoList = todoRepository.findAllBySearch(keyword, searchStartDate, searchEndDate, pageable);
+    public List<TodoSearchResponse> getTodosBySearch(SearchType searchType, String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
+        List<TodoSearchResponse> findTodoList = todoRepository.findAllBySearch(searchType, keyword, searchStartDate, searchEndDate, pageable);
 
-        List<TodoSearchResponse> dtoList = new ArrayList<>();
-        for(Todo todo : findTodoList){
-            TodoSearchResponse dto = new TodoSearchResponse(
-                    todo.getTitle(),
-                    todo.getManagers().size(),
-                    todo.getComments().size()
-            );
-            dtoList.add(dto);
-        }
-
-        return dtoList;
+        return findTodoList;
     }
 }
