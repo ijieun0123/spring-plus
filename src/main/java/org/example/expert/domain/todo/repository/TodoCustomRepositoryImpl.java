@@ -4,6 +4,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.AllArgsConstructor;
 import org.example.expert.domain.comment.entity.QComment;
@@ -13,7 +14,9 @@ import org.example.expert.domain.todo.entity.QTodo;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.enums.SearchType;
 import org.example.expert.domain.user.entity.QUser;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -41,7 +44,7 @@ public class TodoCustomRepositoryImpl implements TodoCustomRepository {
     }
 
     @Override
-    public List<TodoSearchResponse> findAllBySearch(SearchType searchType, String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
+    public Page<TodoSearchResponse> findAllBySearch(SearchType searchType, String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
 
         QTodo todo = QTodo.todo;
         QUser user = QUser.user;
@@ -87,22 +90,36 @@ public class TodoCustomRepositoryImpl implements TodoCustomRepository {
             );
         }
 
-        return jpaQueryFactory
+        List<TodoSearchResponse> todoSearchResponseList = jpaQueryFactory
                 .select(
                         Projections.constructor(
                                 TodoSearchResponse.class,
                                 todo.title.as("title"),
                                 manager.count().as("managerCnt"),
                                 comment.count().as("commentCnt")
-                            )
                         )
-                        .from(todo)
-                        .join(todo.managers, manager)
-                        .join(manager.user, user)
-                        .leftJoin(todo.comments, comment)
-                        .where(whereBuilder)
-                        .groupBy(todo.title)
-                        .having(havingBuilder)
-                        .fetch();
+                )
+                .from(todo)
+                .join(todo.managers, manager)
+                .join(manager.user, user)
+                .leftJoin(todo.comments, comment)
+                .where(whereBuilder)
+                .groupBy(todo.title)
+                .having(havingBuilder)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = jpaQueryFactory
+                .select(todo.count())
+                .from(todo)
+                .join(todo.managers, manager)
+                .join(manager.user, user)
+                .leftJoin(todo.comments, comment)
+                .where(whereBuilder)
+                .groupBy(todo.title)
+                .having(havingBuilder);
+
+        return PageableExecutionUtils.getPage(todoSearchResponseList, pageable, countQuery::fetchOne);
     }
 }

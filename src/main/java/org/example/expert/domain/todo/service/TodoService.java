@@ -89,9 +89,8 @@ public class TodoService {
         );
     }
 
-    public List<TodoSearchResponse> getTodosBySearch(SearchType searchType, String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
-        List<TodoSearchResponse> findTodoList = todoRepository.findAllBySearch(searchType, keyword, searchStartDate, searchEndDate, pageable);
+    public Page<TodoSearchResponse> getTodosBySearch(SearchType searchType, String keyword, LocalDate searchStartDate, LocalDate searchEndDate, Pageable pageable) {
 
-        return findTodoList;
+        return todoRepository.findAllBySearch(searchType, keyword, searchStartDate, searchEndDate, pageable);
     }
 }

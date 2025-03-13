@@ -48,7 +48,7 @@ public class TodoController {
     }
 
     @GetMapping("/todos/search")
-    public ResponseEntity<List<TodoSearchResponse>> getTodosBySearch(
+    public ResponseEntity<Page<TodoSearchResponse>> getTodosBySearch(
             @RequestParam SearchType searchType,
             @RequestParam String keyword,
             @RequestParam(value = "searchStartDate", required = false) @DateTimeFormat(pattern = "yyyyMMdd") LocalDate searchStartDate,
