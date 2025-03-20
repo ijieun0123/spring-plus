@@ -41,9 +41,11 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .rememberMe(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(request -> request.getRequestURI().startsWith("/auth")).permitAll()
+                        .requestMatchers(request -> {
+                            String uri = request.getRequestURI();
+                            return uri.startsWith("/auth");
+                        }).permitAll()
                         .requestMatchers("/admin").hasAuthority(UserRole.ADMIN.toString())
-                        .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .build();
