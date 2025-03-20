@@ -29,3 +29,6 @@
       
 ### 예시
 <img width="278" alt="Image" src="https://github.com/user-attachments/assets/4cbb3d2e-bece-4456-859a-fbed7f891da3" />
+
+## RDS
+<img width="1131" alt="Image" src="https://github.com/user-attachments/assets/f0eabc99-10fd-4b9c-a5a2-bfaa21419f9e" />
