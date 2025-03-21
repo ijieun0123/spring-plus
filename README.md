@@ -32,3 +32,6 @@
 
 ## RDS
 <img width="1131" alt="Image" src="https://github.com/user-attachments/assets/f0eabc99-10fd-4b9c-a5a2-bfaa21419f9e" />
+
+## S3
+<img width="1133" alt="Image" src="https://github.com/user-attachments/assets/8f2aef72-873c-40a3-ae12-2003aafc5ceb" />
